@@ -1,0 +1,79 @@
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from '../../environments/environment';
+
+@Component({
+  selector: 'app-login',
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.scss']
+})
+export class LoginComponent implements OnInit {
+  url = environment.Url;
+  username: string;
+  name: string;
+  role: string;
+  secretkey: any;
+  password: any;
+  form: FormGroup;
+  isActive: boolean = false;
+  details: any;
+  c: any;
+  b: any;
+  submitted = false;
+
+  constructor(
+    public router: Router, public http: HttpClient, private formBuilder: FormBuilder
+  ) { }
+
+  ngOnInit() {
+    this.c = localStorage.getItem('access_token_cookie');
+    const d = JSON.parse(localStorage.getItem('data1'));
+    if (this.c != null) {
+      const role = d['role'].toLowerCase();
+      this.router.navigate([role]);
+    }
+    this.form = this.formBuilder.group({
+      'username': [null, Validators.required],
+      'password': [null, Validators.required],
+    })
+
+  }
+
+  login() {
+    if (this.form.valid) {
+      const httpOptions = {
+        headers: new HttpHeaders({
+          'content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          // 'authorization': 'Basic ' + btoa(this.form.value['username'] + ":" + this.form.value['password'])
+        })
+      }
+      const body = {
+        username: this.form.value['username'],
+        password: this.form.value['password']
+      }
+      console.log(body)
+      this.http.post("http://0.0.0.0:5001/login", body, httpOptions).subscribe(data => {
+        if (data['login'] == false) {
+          alert("Username or Password don't match")
+        } else
+          if (data['login'] == true) {
+            console.log(data['msg'])
+            this.role = data['role'].toLowerCase();
+            localStorage.setItem('data1', JSON.stringify(data))
+            localStorage.setItem('access_token_cookie', data['access_token'])
+            console.log(this.role)
+            this.router.navigate([this.role]);
+
+            const a = JSON.parse(localStorage.getItem('data1'));
+            this.b = a['role']
+          }
+      })
+    }
+
+  }
+}
+
